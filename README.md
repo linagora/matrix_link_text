@@ -1,3 +1,5 @@
+**THIS IS A FORK FROM https://github.com/kate-shine/link_text**
+
 # Link Text
 
 [![Pub Package](https://img.shields.io/pub/v/link_text.svg?style=flat-square)](https://pub.dartlang.org/packages/link_text)
@@ -34,6 +36,6 @@ Add to pubspec.yaml:
 
 ```yaml
 dependencies:
-  link_text: ^0.1.2
+  matrix_link_text: ^0.1.3
 ```
 For more info, check out [example project](https://github.com/aleksanderwozniak/link_text/tree/master/example).

@@ -2,7 +2,7 @@
 //  Licensed under Apache License v2.0
 
 import 'package:flutter/material.dart';
-import 'package:link_text/link_text.dart';
+import 'package:matrix_link_text/link_text.dart';
 
 void main() => runApp(MyApp());
 

@@ -1,3 +1,9 @@
+## [0.1.3]
+* Add `onLinkTap` handler
+* Use `Text.rich` instead of `RichText`
+* Use better URL regex to properly handle params and new TLDs
+* Add matrix identifiers to regex
+
 ## [0.1.2]
 
 * LinkText widget now handles URLs which include commas
