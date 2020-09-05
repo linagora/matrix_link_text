@@ -100,8 +100,8 @@ class _LinkTextState extends State<LinkText> {
       }
     });
 
-    return RichText(
-      text: TextSpan(children: textSpans),
+    return Text.rich(
+      TextSpan(children: textSpans),
       textAlign: widget.textAlign,
     );
   }
