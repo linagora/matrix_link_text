@@ -1,3 +1,6 @@
+## [0.1.4]
+- Always return `text` and `children` in `LinkTextSpans`
+
 ## [0.1.3]
 * Add `onLinkTap` handler
 * Use `Text.rich` instead of `RichText`

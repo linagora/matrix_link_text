@@ -84,6 +84,7 @@ TextSpan LinkTextSpans(
     return TextSpan(
       text: text,
       style: textStyle,
+      children: [],
     );
   }
 
@@ -108,7 +109,7 @@ TextSpan LinkTextSpans(
       i++;
     }
   });
-  return TextSpan(children: textSpans);
+  return TextSpan(text: "", children: textSpans);
 }
 
 class LinkText extends StatelessWidget {
