@@ -1,3 +1,6 @@
+## [0.1.5]
+- Fix bug of the wrong array type being used
+
 ## [0.1.4]
 - Always return `text` and `children` in `LinkTextSpans`
 

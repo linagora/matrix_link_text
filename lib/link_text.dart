@@ -89,7 +89,7 @@ TextSpan LinkTextSpans(
   }
 
   final textParts = text.split(_regex);
-  final textSpans = <TextSpan>[];
+  final textSpans = <InlineSpan>[];
 
   int i = 0;
   textParts.forEach((part) {
