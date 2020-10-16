@@ -8,6 +8,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'tlds.dart';
+
 typedef LinkTapHandler = void Function(String);
 
 class LinkTextSpan extends TextSpan {
@@ -43,14 +45,14 @@ class LinkTextSpan extends TextSpan {
 }
 
 // whole regex:
-// (?<=\b|(?<=\W)(?=[#!+$@])|^)(?:(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@|\d{1,3}(?:\.\d{1,3}){3}|(?:(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)(?:\.(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)*(?:\.[a-z\x{00a1}-\x{ffff}]{2,6}))(?::\d+)?(?:[^\s\(]*(?:\(\S*[^\s:;,.]|[^\s\):;,.]))?|[#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+)
+// (?<=\b|(?<=\W)(?=[#!+$@])|^)(?:((?:https?|ftp):\/\/)?(?:\S+(?::\S*)?@|\d{1,3}(?:\.\d{1,3}){3}|(?:(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)(?:\.(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)*(?:\.([a-z\x{00a1}-\x{ffff}]{2,})))(?::\d+)?(?:[^\s\(]*(?:\(\S*[^\s:;,.]|[^\s\):;,.]))?|[#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+)
 // Consists of: `startregex(?:urlregex|matrixregex)`
 // start regex: (?<=\b|(?<=\W)(?=[#!+$@])|^)
-// url regex: (?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@|\d{1,3}(?:\.\d{1,3}){3}|(?:(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)(?:\.(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)*(?:\.[a-z\x{00a1}-\x{ffff}]{2,6}))(?::\d+)?(?:[^\s\(]*(?:\(\S*[^\s:;,.]|[^\s\):;,.]))?
+// url regex: ((?:https?|ftp):\/\/)?(?:\S+(?::\S*)?@|\d{1,3}(?:\.\d{1,3}){3}|(?:(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)(?:\.(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)*(?:\.([a-z\x{00a1}-\x{ffff}]{2,})))(?::\d+)?(?:[^\s\(]*(?:\(\S*[^\s:;,.]|[^\s\):;,.]))?
 // matrix regex: [#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+
 // \x{0000} needs to be replaced with \u0000, not done in the comments so that they work with regex101.com
 final RegExp _regex = RegExp(
-    r"(?<=\b|(?<=\W)(?=[#!+$@])|^)(?:(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@|\d{1,3}(?:\.\d{1,3}){3}|(?:(?:[a-z\d\u00a1-\uffff]+-?)*[a-z\d\u00a1-\uffff]+)(?:\.(?:[a-z\d\u00a1-\uffff]+-?)*[a-z\d\u00a1-\uffff]+)*(?:\.[a-z\u00a1-\uffff]{2,6}))(?::\d+)?(?:[^\s\(]*(?:\(\S*[^\s:;,.]|[^\s\):;,.]))?|[#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+)");
+    r"(?<=\b|(?<=\W)(?=[#!+$@])|^)(?:((?:https?|ftp):\/\/)?(?:\S+(?::\S*)?@|\d{1,3}(?:\.\d{1,3}){3}|(?:(?:[a-z\d\u00a1-\uffff]+-?)*[a-z\d\u00a1-\uffff]+)(?:\.(?:[a-z\d\u00a1-\uffff]+-?)*[a-z\d\u00a1-\uffff]+)*(?:\.([a-z\u00a1-\uffff]{2,})))(?::\d+)?(?:[^\s\(]*(?:\(\S*[^\s:;,.]|[^\s\):;,.]))?|[#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+)");
 
 // ignore: non_constant_identifier_names
 TextSpan LinkTextSpans(
@@ -96,20 +98,34 @@ TextSpan LinkTextSpans(
     textSpans.add(TextSpan(text: part, style: textStyle));
 
     if (i < links.length) {
-      final link = links.elementAt(i).group(0);
-      textSpans.add(
-        LinkTextSpan(
-          text: link,
-          style: linkStyle,
-          url: link,
-          onLinkTap: _launchUrl,
-        ),
-      );
+      final element = links.elementAt(i);
+      final linkText = element.group(0);
+      var link = linkText;
+      final scheme = element.group(1);
+      final tld = element.group(2);
+      var valid = true;
+      if ((scheme ?? '').isEmpty && (tld ?? '').isNotEmpty) {
+        // we have to validate if the tld exists
+        valid = ALL_TLDS.contains(tld.toLowerCase());
+        link = 'https://' + link;
+      }
+      if (valid) {
+        textSpans.add(
+          LinkTextSpan(
+            text: linkText,
+            style: linkStyle,
+            url: link,
+            onLinkTap: _launchUrl,
+          ),
+        );
+      } else {
+        textSpans.add(TextSpan(text: linkText, style: textStyle));
+      }
 
       i++;
     }
   });
-  return TextSpan(text: "", children: textSpans);
+  return TextSpan(text: '', children: textSpans);
 }
 
 class LinkText extends StatelessWidget {
