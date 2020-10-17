@@ -1,3 +1,6 @@
+## [0.2.0]
+- Parse URLs without
+
 ## [0.1.5]
 - Fix bug of the wrong array type being used
 
