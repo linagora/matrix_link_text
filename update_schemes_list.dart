@@ -3,7 +3,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-const ICAAN_URL = 'https://www.iana.org/assignments/uri-schemes/uri-schemes-1.csv';
+const ICAAN_URL =
+    'https://www.iana.org/assignments/uri-schemes/uri-schemes-1.csv';
 const OUT_FILE = './lib/schemes.dart';
 
 void main() async {
