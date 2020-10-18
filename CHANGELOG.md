@@ -1,3 +1,7 @@
+## [0.3.0]
+- Parse URIs, not just urls
+- Performance optimizations for very long texts
+
 ## [0.2.0]
 - Parse URLs without
 

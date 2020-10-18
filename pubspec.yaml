@@ -1,6 +1,6 @@
 name: matrix_link_text
 description: Easy to use text widget for Flutter apps, which converts inlined urls into working, clickable links. Allows for custom styling. Supports matrix identifiers
-version: 0.2.0
+version: 0.3.0
 author: Aleksander Woźniak <aleksanderwozniak96@gmail.com>, Sorunome <mail@sorunome.de>
 homepage: https://github.com/Sorunome/matrix_link_text
 

@@ -10,7 +10,7 @@ const OUT_FILE = './lib/tlds.dart';
 void main() async {
   final res = utf8.decode((await http.get(ICAAN_URL)).bodyBytes);
   final file = await File(OUT_FILE).open(mode: FileMode.write);
-  await file.writeString('const ALL_TLDS = [\n');
+  await file.writeString('const ALL_TLDS = {\n');
   for (var tld in res.split('\n')) {
     tld = tld.trim().toLowerCase();
     if (tld.startsWith('#') || tld.isEmpty) {
@@ -22,6 +22,6 @@ void main() async {
     }
     await file.writeString('  "$tld",\n');
   }
-  await file.writeString('];\n');
+  await file.writeString('};\n');
   await file.close();
 }

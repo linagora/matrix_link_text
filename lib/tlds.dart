@@ -1,4 +1,4 @@
-const ALL_TLDS = [
+const ALL_TLDS = {
   "aaa",
   "aarp",
   "abarth",
@@ -1659,4 +1659,4 @@ const ALL_TLDS = [
   "zone",
   "zuerich",
   "zw",
-];
+};
