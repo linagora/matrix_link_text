@@ -1,3 +1,6 @@
+## [0.3.1]
+- Overgo issues with links not always being clickable in -web
+
 ## [0.3.0]
 - Parse URIs, not just urls
 - Performance optimizations for very long texts

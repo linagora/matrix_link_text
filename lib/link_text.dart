@@ -9,6 +9,7 @@ import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart';
 
 import 'tlds.dart';
 import 'schemes.dart';
@@ -52,6 +53,7 @@ class LinkTextSpan extends TextSpan {
 // Consists of: `startregex(?:urlregex|matrixregex)`
 // start regex: (?<=\b|(?<=\W)(?=[#!+$@])|^)
 // url regex: (?<![#!+$@=])(?:([a-z0-9]+):(?:\/\/(?:\S+(?::\S*)?@)?(?:[a-z\d\x{00a1}-\x{ffff}](?:\.?[a-z\d\x{00a1}-\x{ffff}-])*\.[a-z\x{00a1}-\x{ffff}][a-z\x{00a1}-\x{ffff}-]+|\d{1,3}(?:\.\d{1,3}){3}|\[[\da-f:]{3,}\]|localhost)(?::\d+)?(?:(?=[\/?#])[^\s\(]*(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))?|(?!\/\/)[^\s\(]+(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))|(?<!\.)[a-z\d\x{00a1}-\x{ffff}](?:\.?[a-z\d\x{00a1}-\x{ffff}-])*\.(?!http)([a-z\x{00a1}-\x{ffff}][a-z\x{00a1}-\x{ffff}-]+)(?:(?=[\/?#])[^\s\(]*(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))?|(?:\S+@)[a-z\d\x{00a1}-\x{ffff}](?:\.?[a-z\d\x{00a1}-\x{ffff}-])*\.(?!http)([a-z\x{00a1}-\x{ffff}][a-z\x{00a1}-\x{ffff}-]+))
+// matrix regex: [#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+
 // \x{0000} needs to be replaced with \u0000, not done in the comments so that they work with regex101.com
 final RegExp _regex = RegExp(
     r'(?<=\b|(?<=\W)(?=[#!+$@])|^)(?:(?<![#!+$@=])(?:([a-z0-9]+):(?:\/\/(?:\S+(?::\S*)?@)?(?:[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.[a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+|\d{1,3}(?:\.\d{1,3}){3}|\[[\da-f:]{3,}\]|localhost)(?::\d+)?(?:(?=[\/?#])[^\s\(]*(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))?|(?!\/\/)[^\s\(]+(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))|(?<!\.)[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.(?!http)([a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+)(?:(?=[\/?#])[^\s\(]*(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))?|(?:\S+@)[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.(?!http)([a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+))|[#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+)',
@@ -126,7 +128,7 @@ TextSpan LinkTextSpans(
       final fragmentTextParts = fragment.split(_regex);
       // if the first of last text part is empty, that means that the chunk wasn't big enough to fit the full URI
       // thus we abort and fall back to the slow method
-      if (fragmentTextParts.first.isEmpty ||
+      if ((fragmentTextParts.first.isEmpty && curStart > 0) ||
           (fragmentTextParts.last.isEmpty && curEnd < text.length)) {
         abort = true;
         links = null;
@@ -209,14 +211,26 @@ TextSpan LinkTextSpans(
         link = 'mailto:' + link;
       }
       if (valid) {
-        textSpans.add(
-          LinkTextSpan(
-            text: linkText,
-            style: linkStyle,
-            url: link,
-            onLinkTap: _launchUrl,
-          ),
-        );
+        if (kIsWeb) {
+          // on web recognizer in TextSpan does not work properly, so we use normal text w/ inkwell
+          textSpans.add(
+            WidgetSpan(
+              child: InkWell(
+                onTap: () => _launchUrl(link),
+                child: Text(linkText, style: linkStyle),
+              ),
+            ),
+          );
+        } else {
+          textSpans.add(
+            LinkTextSpan(
+              text: linkText,
+              style: linkStyle,
+              url: link,
+              onLinkTap: _launchUrl,
+            ),
+          );
+        }
       } else {
         textSpans.add(TextSpan(text: linkText, style: textStyle));
       }
