@@ -59,6 +59,12 @@ final RegExp _regex = RegExp(
     r'(?<=\b|(?<=\W)(?=[#!+$@])|^)(?:(?<![#!+$@=])(?:([a-z0-9]+):(?:\/\/(?:\S+(?::\S*)?@)?(?:[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.[a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+|\d{1,3}(?:\.\d{1,3}){3}|\[[\da-f:]{3,}\]|localhost)(?::\d+)?(?:(?=[\/?#])[^\s\(]*(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))?|(?!\/\/)[^\s\(]+(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))|(?<!\.)[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.(?!http)([a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+)(?:(?=[\/?#])[^\s\(]*(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))?|(?:\S+@)[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.(?!http)([a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+))|[#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+)',
     caseSensitive: false);
 
+// fallback regex without lookbehinds for incompatible browsers etc.
+// it is slightly worse but still gets the job mostly done
+final RegExp _fallbackRegex = RegExp(
+    r'(?:\b|(?=[#!+$@])|^)(?:(?:([a-z0-9]+):(?:\/\/(?:\S+(?::\S*)?@)?(?:[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.[a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+|\d{1,3}(?:\.\d{1,3}){3}|\[[\da-f:]{3,}\]|localhost)(?::\d+)?(?:(?=[\/?#])[^\s\(]*(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))?|(?!\/\/)[^\s\(]+(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))|[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.(?!http)([a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+)(?:(?=[\/?#])[^\s\(]*(?:\(\S*[^\s:;,.!?]|[^\s\):;,.!?]))?|(?:\S+@)[a-z\d\u00a1-\uffff](?:\.?[a-z\d\u00a1-\uffff-])*\.(?!http)([a-z\u00a1-\uffff][a-z\u00a1-\uffff-]+))|[#!+$@][^:\s]*:[\w\.\d-]+\.[\w-\d]+)',
+    caseSensitive: false);
+
 final RegExp _estimateRegex = RegExp(r'\S[\.:]\S');
 
 // ignore: non_constant_identifier_names
@@ -98,6 +104,17 @@ TextSpan LinkTextSpans(
     );
   }
 
+  // Our _regex uses lookbehinds for nicer matching, which isn't supported by all browsers yet.
+  // Sadly, an error is only thrown on usage. So, we try to match against an empty string to get
+  // our error ASAP and then determine the regex we use based on that.
+  RegExp regexToUse;
+  try {
+    _regex.hasMatch('');
+    regexToUse = _regex;
+  } catch (_) {
+    regexToUse = _fallbackRegex;
+  }
+
   List<RegExpMatch> links;
   List<String> textParts;
   if (text.length > 300) {
@@ -122,10 +139,10 @@ TextSpan LinkTextSpans(
       // fetch our current fragment...
       final fragment = text.substring(curStart, curEnd);
       // add all the links
-      links.addAll(_regex.allMatches(fragment));
+      links.addAll(regexToUse.allMatches(fragment));
 
       // and fetch the text parts
-      final fragmentTextParts = fragment.split(_regex);
+      final fragmentTextParts = fragment.split(regexToUse);
       // if the first of last text part is empty, that means that the chunk wasn't big enough to fit the full URI
       // thus we abort and fall back to the slow method
       if ((fragmentTextParts.first.isEmpty && curStart > 0) ||
@@ -172,7 +189,7 @@ TextSpan LinkTextSpans(
       }
     }
   }
-  links ??= _regex.allMatches(text).toList();
+  links ??= regexToUse.allMatches(text).toList();
   if (links.isEmpty) {
     return TextSpan(
       text: text,
@@ -181,7 +198,7 @@ TextSpan LinkTextSpans(
     );
   }
 
-  textParts ??= text.split(_regex);
+  textParts ??= text.split(regexToUse);
   final textSpans = <InlineSpan>[];
 
   int i = 0;

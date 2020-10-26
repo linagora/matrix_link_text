@@ -1,3 +1,6 @@
+## [0.3.2]
+- Fix with a fallback regex for browsers that don't support regex lookbehinds yet
+
 ## [0.3.1]
 - Overgo issues with links not always being clickable in -web
 
