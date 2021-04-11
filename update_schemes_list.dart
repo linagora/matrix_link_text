@@ -8,7 +8,7 @@ const ICAAN_URL =
 const OUT_FILE = './lib/schemes.dart';
 
 void main() async {
-  final res = utf8.decode((await http.get(ICAAN_URL)).bodyBytes);
+  final res = utf8.decode((await http.get(Uri.parse(ICAAN_URL))).bodyBytes);
   final file = await File(OUT_FILE).open(mode: FileMode.write);
   await file.writeString('const ALL_SCHEMES = {\n');
   for (final row in res.split('\n')) {
