@@ -1,3 +1,6 @@
+## [0.4.0]
+- Update dependencies
+
 ## [0.3.2]
 - Fix with a fallback regex for browsers that don't support regex lookbehinds yet
 
