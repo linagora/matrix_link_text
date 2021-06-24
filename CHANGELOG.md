@@ -1,3 +1,6 @@
+## [0.4.1]
+- Make that URLs can't end in `>`
+
 ## [0.4.0]
 - Update dependencies
 
