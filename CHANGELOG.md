@@ -1,3 +1,7 @@
+## [0.4.2]
+- Terminate URLs at zero-width-spaces, too
+- Make that URLs can't end in `]` and `}`
+
 ## [0.4.1]
 - Make that URLs can't end in `>`
 
