@@ -1,3 +1,6 @@
+## [1.0.2]
+- Add `CleanRichText.maxLines` and `LinkText.maxLines`
+
 ## [1.0.1]
 - Update readme and example
 - Update deps

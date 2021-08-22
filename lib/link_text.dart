@@ -85,8 +85,10 @@ class LinkTextSpan extends TextSpan {
 class CleanRichText extends StatefulWidget {
   final InlineSpan child;
   final TextAlign? textAlign;
+  final int? maxLines;
 
-  CleanRichText(this.child, {Key? key, this.textAlign}) : super(key: key);
+  CleanRichText(this.child, {Key? key, this.textAlign, this.maxLines})
+      : super(key: key);
 
   _CleanRichTextState createState() => _CleanRichTextState();
 }
@@ -113,7 +115,11 @@ class _CleanRichTextState extends State<CleanRichText> {
 
   @override
   Widget build(BuildContext build) {
-    return Text.rich(widget.child, textAlign: widget.textAlign);
+    return Text.rich(
+      widget.child,
+      textAlign: widget.textAlign,
+      maxLines: widget.maxLines,
+    );
   }
 }
 
@@ -338,6 +344,7 @@ class LinkText extends StatelessWidget {
   final TextStyle? linkStyle;
   final TextAlign? textAlign;
   final LinkTapHandler? onLinkTap;
+  final int? maxLines;
 
   const LinkText({
     Key? key,
@@ -346,6 +353,7 @@ class LinkText extends StatelessWidget {
     this.linkStyle,
     this.textAlign = TextAlign.start,
     this.onLinkTap,
+    this.maxLines,
   }) : super(key: key);
 
   @override
@@ -359,6 +367,7 @@ class LinkText extends StatelessWidget {
         themeData: Theme.of(context),
       ),
       textAlign: textAlign,
+      maxLines: maxLines,
     );
   }
 }
