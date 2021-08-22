@@ -1,3 +1,7 @@
+## [1.0.1]
+- Update readme and example
+- Update deps
+
 ## [1.0.0]
 - Null safety!
 - Various fixes to properly dispose of gesture recognizers
