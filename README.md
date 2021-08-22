@@ -40,4 +40,4 @@ Add to pubspec.yaml:
 dependencies:
   matrix_link_text: ^1.0.0
 ```
-For more info, check out [example project](https://github.com/aleksanderwozniak/link_text/tree/master/example).
+For more info, check out [example project](https://github.com/Sorunome/matrix_link_text/tree/master/example).
