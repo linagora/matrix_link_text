@@ -1,3 +1,7 @@
+## [1.0.0]
+- Null safety!
+- Various fixes to properly dispose of gesture recognizers
+
 ## [0.4.2]
 - Terminate URLs at zero-width-spaces, too
 - Make that URLs can't end in `]` and `}`

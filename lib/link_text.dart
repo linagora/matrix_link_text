@@ -30,22 +30,91 @@ class LinkTextSpan extends TextSpan {
   // manage the recognizer from outside the TextSpan, e.g. in the State of a
   // stateful widget that then hands the recognizer to the TextSpan.
   final String url;
+  final LinkTapHandler? onLinkTap;
 
   LinkTextSpan(
-      {TextStyle style,
-      this.url,
-      String text,
-      LinkTapHandler onLinkTap,
-      List<InlineSpan> children})
+      {TextStyle? style,
+      required this.url,
+      String? text,
+      this.onLinkTap,
+      List<InlineSpan>? children})
       : super(
           style: style,
-          text: text,
+          text: text ?? '',
           children: children ?? <InlineSpan>[],
           recognizer: TapGestureRecognizer()
-            ..onTap = () {
-              onLinkTap?.call(url);
+            ..onTap = () async {
+              if (onLinkTap != null) {
+                onLinkTap(url);
+                return;
+              }
+              if (await canLaunch(url)) {
+                await launch(url);
+              } else {
+                throw 'Could not launch $url';
+              }
             },
-        );
+        ) {
+    _fixRecognizer(this, recognizer!);
+  }
+
+  void _fixRecognizer(TextSpan textSpan, GestureRecognizer recognizer) {
+    if (textSpan.children?.isEmpty ?? true) {
+      return;
+    }
+    final fixedChildren = <InlineSpan>[];
+    for (final child in textSpan.children!) {
+      if (child is TextSpan && child.recognizer == null) {
+        _fixRecognizer(child, recognizer);
+        fixedChildren.add(TextSpan(
+          text: child.text,
+          style: child.style,
+          recognizer: recognizer,
+          children: child.children,
+        ));
+      } else {
+        fixedChildren.add(child);
+      }
+    }
+    textSpan.children!.clear();
+    textSpan.children!.addAll(fixedChildren);
+  }
+}
+
+/// Like Text.rich only that it also correctly disposes of all recognizers
+class CleanRichText extends StatefulWidget {
+  final InlineSpan child;
+  final TextAlign? textAlign;
+
+  CleanRichText(this.child, {Key? key, this.textAlign}) : super(key: key);
+
+  _CleanRichTextState createState() => _CleanRichTextState();
+}
+
+class _CleanRichTextState extends State<CleanRichText> {
+  void _disposeTextspan(TextSpan textSpan) {
+    textSpan.recognizer?.dispose();
+    if (textSpan.children != null) {
+      for (final child in textSpan.children!) {
+        if (child is TextSpan) {
+          _disposeTextspan(child);
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (widget.child is TextSpan) {
+      _disposeTextspan(widget.child as TextSpan);
+    }
+  }
+
+  @override
+  Widget build(BuildContext build) {
+    return Text.rich(widget.child, textAlign: widget.textAlign);
+  }
 }
 
 // whole regex:
@@ -69,12 +138,11 @@ final RegExp _estimateRegex = RegExp(r'[^\s\u200b][\.:][^\s\u200b]');
 
 // ignore: non_constant_identifier_names
 TextSpan LinkTextSpans(
-    {String text,
-    TextStyle textStyle,
-    TextStyle linkStyle,
-    LinkTapHandler onLinkTap,
-    ThemeData themeData}) {
-  assert(text != null);
+    {required String text,
+    TextStyle? textStyle,
+    TextStyle? linkStyle,
+    LinkTapHandler? onLinkTap,
+    ThemeData? themeData}) {
   final _launchUrl = (String url) async {
     if (onLinkTap != null) {
       onLinkTap(url);
@@ -88,9 +156,9 @@ TextSpan LinkTextSpans(
     }
   };
 
-  textStyle ??= themeData?.textTheme?.bodyText2;
-  linkStyle ??= themeData?.textTheme?.bodyText2?.copyWith(
-    color: themeData?.accentColor,
+  textStyle ??= themeData?.textTheme.bodyText2;
+  linkStyle ??= themeData?.textTheme.bodyText2?.copyWith(
+    color: themeData.accentColor,
     decoration: TextDecoration.underline,
   );
 
@@ -115,8 +183,8 @@ TextSpan LinkTextSpans(
     regexToUse = _fallbackRegex;
   }
 
-  List<RegExpMatch> links;
-  List<String> textParts;
+  List<RegExpMatch>? links;
+  List<String>? textParts;
   if (text.length > 300) {
     // we have a super long text, let's try to split it up
     links = [];
@@ -131,15 +199,21 @@ TextSpan LinkTextSpans(
     var lastEnd = 0; // the last chunk end, where we stopped parsing
     var abort = false; // should we abort and fall back to the slow method?
     final processChunk = () {
+      if (textParts == null || links == null) {
+        abort = true;
+        links = null;
+        textParts = null;
+        return;
+      }
       // we gotta make sure to save the text fragment between the current and the last chunk
       final firstFragment = text.substring(lastEnd, curStart);
       if (firstFragment.isNotEmpty) {
-        textParts.last += firstFragment;
+        textParts!.last += firstFragment;
       }
       // fetch our current fragment...
       final fragment = text.substring(curStart, curEnd);
       // add all the links
-      links.addAll(regexToUse.allMatches(fragment));
+      links!.addAll(regexToUse.allMatches(fragment));
 
       // and fetch the text parts
       final fragmentTextParts = fragment.split(regexToUse);
@@ -153,8 +227,8 @@ TextSpan LinkTextSpans(
         return;
       }
       // add all the text parts correctly
-      textParts.last += fragmentTextParts.removeAt(0);
-      textParts.addAll(fragmentTextParts);
+      textParts!.last += fragmentTextParts.removeAt(0);
+      textParts!.addAll(fragmentTextParts);
       // and save the lastEnd for later
       lastEnd = curEnd;
     };
@@ -184,13 +258,13 @@ TextSpan LinkTextSpans(
     if (!abort) {
       // and we musn't forget to add the last fragment
       final lastFragment = text.substring(lastEnd, text.length);
-      if (lastFragment.isNotEmpty) {
-        textParts.last += lastFragment;
+      if (lastFragment.isNotEmpty && textParts != null) {
+        textParts!.last += lastFragment;
       }
     }
   }
   links ??= regexToUse.allMatches(text).toList();
-  if (links.isEmpty) {
+  if (links!.isEmpty) {
     return TextSpan(
       text: text,
       style: textStyle,
@@ -202,29 +276,29 @@ TextSpan LinkTextSpans(
   final textSpans = <InlineSpan>[];
 
   int i = 0;
-  textParts.forEach((part) {
+  textParts!.forEach((part) {
     textSpans.add(TextSpan(text: part, style: textStyle));
 
-    if (i < links.length) {
-      final element = links[i];
-      final linkText = element.group(0);
+    if (i < links!.length) {
+      final element = links![i];
+      final linkText = element.group(0) ?? '';
       var link = linkText;
       final scheme = element.group(1);
       final tldUrl = element.group(2);
       final tldEmail = element.group(3);
       var valid = true;
-      if ((scheme ?? '').isNotEmpty) {
+      if (scheme?.isNotEmpty ?? false) {
         // we have to validate the scheme
-        valid = ALL_SCHEMES.contains(scheme.toLowerCase());
+        valid = ALL_SCHEMES.contains(scheme!.toLowerCase());
       }
-      if (valid && (tldUrl ?? '').isNotEmpty) {
+      if (valid && (tldUrl?.isNotEmpty ?? false)) {
         // we have to validate if the tld exists
-        valid = ALL_TLDS.contains(tldUrl.toLowerCase());
+        valid = ALL_TLDS.contains(tldUrl!.toLowerCase());
         link = 'https://' + link;
       }
-      if (valid && (tldEmail ?? '').isNotEmpty) {
+      if (valid && (tldEmail?.isNotEmpty ?? false)) {
         // we have to validate if the tld exists
-        valid = ALL_TLDS.contains(tldEmail.toLowerCase());
+        valid = ALL_TLDS.contains(tldEmail!.toLowerCase());
         link = 'mailto:' + link;
       }
       if (valid) {
@@ -260,24 +334,23 @@ TextSpan LinkTextSpans(
 
 class LinkText extends StatelessWidget {
   final String text;
-  final TextStyle textStyle;
-  final TextStyle linkStyle;
-  final TextAlign textAlign;
-  final LinkTapHandler onLinkTap;
+  final TextStyle? textStyle;
+  final TextStyle? linkStyle;
+  final TextAlign? textAlign;
+  final LinkTapHandler? onLinkTap;
 
   const LinkText({
-    Key key,
-    @required this.text,
+    Key? key,
+    required this.text,
     this.textStyle,
     this.linkStyle,
     this.textAlign = TextAlign.start,
     this.onLinkTap,
-  })  : assert(text != null),
-        super(key: key);
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Text.rich(
+    return CleanRichText(
       LinkTextSpans(
         text: text,
         textStyle: textStyle,
