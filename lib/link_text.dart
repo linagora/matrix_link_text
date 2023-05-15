@@ -6,15 +6,15 @@ library matrix_link_text;
 
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/foundation.dart';
 
-import 'tlds.dart';
 import 'schemes.dart';
+import 'tlds.dart';
 
-typedef LinkTapHandler = void Function(String);
+typedef LinkTapHandler = void Function(Uri);
 
 class LinkTextSpan extends TextSpan {
   // Beware!
@@ -29,7 +29,7 @@ class LinkTextSpan extends TextSpan {
   // Since TextSpan itself is @immutable, this means that you would have to
   // manage the recognizer from outside the TextSpan, e.g. in the State of a
   // stateful widget that then hands the recognizer to the TextSpan.
-  final String url;
+  final Uri url;
   final LinkTapHandler? onLinkTap;
 
   LinkTextSpan(
@@ -48,8 +48,8 @@ class LinkTextSpan extends TextSpan {
                 onLinkTap(url);
                 return;
               }
-              if (await canLaunch(url)) {
-                await launch(url);
+              if (await canLaunchUrl(url)) {
+                await launchUrl(url);
               } else {
                 throw 'Could not launch $url';
               }
@@ -87,10 +87,11 @@ class CleanRichText extends StatefulWidget {
   final TextAlign? textAlign;
   final int? maxLines;
 
-  CleanRichText(this.child, {Key? key, this.textAlign, this.maxLines})
+  const CleanRichText(this.child, {Key? key, this.textAlign, this.maxLines})
       : super(key: key);
 
-  _CleanRichTextState createState() => _CleanRichTextState();
+  @override
+  State<CleanRichText> createState() => _CleanRichTextState();
 }
 
 class _CleanRichTextState extends State<CleanRichText> {
@@ -149,22 +150,22 @@ TextSpan LinkTextSpans(
     TextStyle? linkStyle,
     LinkTapHandler? onLinkTap,
     ThemeData? themeData}) {
-  final _launchUrl = (String url) async {
+  Future<void> launchUrlIfHandler(Uri url) async {
     if (onLinkTap != null) {
       onLinkTap(url);
       return;
     }
 
-    if (await canLaunch(url)) {
-      await launch(url);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
     } else {
       throw 'Could not launch $url';
     }
-  };
+  }
 
-  textStyle ??= themeData?.textTheme.bodyText2;
-  linkStyle ??= themeData?.textTheme.bodyText2?.copyWith(
-    color: themeData.accentColor,
+  textStyle ??= themeData?.textTheme.bodyMedium;
+  linkStyle ??= themeData?.textTheme.bodyMedium?.copyWith(
+    color: themeData.colorScheme.secondary,
     decoration: TextDecoration.underline,
   );
 
@@ -174,7 +175,7 @@ TextSpan LinkTextSpans(
     return TextSpan(
       text: text,
       style: textStyle,
-      children: [],
+      children: const [],
     );
   }
 
@@ -204,7 +205,7 @@ TextSpan LinkTextSpans(
     var curEnd = 0; // the current chunk end
     var lastEnd = 0; // the last chunk end, where we stopped parsing
     var abort = false; // should we abort and fall back to the slow method?
-    final processChunk = () {
+    void processChunk() {
       if (textParts == null || links == null) {
         abort = true;
         links = null;
@@ -237,11 +238,11 @@ TextSpan LinkTextSpans(
       textParts!.addAll(fragmentTextParts);
       // and save the lastEnd for later
       lastEnd = curEnd;
-    };
+    }
     for (final e in estimateMatches) {
-      const CHUNK_SIZE = 120;
-      final start = max(e.start - CHUNK_SIZE, 0);
-      final end = min(e.start + CHUNK_SIZE, text.length);
+      const int kChunkSize = 120;
+      final start = max(e.start - kChunkSize, 0);
+      final end = min(e.start + kChunkSize, text.length);
       if (start < curEnd) {
         // merge blocks
         curEnd = end;
@@ -274,7 +275,7 @@ TextSpan LinkTextSpans(
     return TextSpan(
       text: text,
       style: textStyle,
-      children: [],
+      children: const [],
     );
   }
 
@@ -282,7 +283,7 @@ TextSpan LinkTextSpans(
   final textSpans = <InlineSpan>[];
 
   int i = 0;
-  textParts!.forEach((part) {
+  for (var part in textParts!) {
     textSpans.add(TextSpan(text: part, style: textStyle));
 
     if (i < links!.length) {
@@ -295,25 +296,26 @@ TextSpan LinkTextSpans(
       var valid = true;
       if (scheme?.isNotEmpty ?? false) {
         // we have to validate the scheme
-        valid = ALL_SCHEMES.contains(scheme!.toLowerCase());
+        valid = kAllSchemes.contains(scheme!.toLowerCase());
       }
       if (valid && (tldUrl?.isNotEmpty ?? false)) {
         // we have to validate if the tld exists
-        valid = ALL_TLDS.contains(tldUrl!.toLowerCase());
-        link = 'https://' + link;
+        valid = kAllTlds.contains(tldUrl!.toLowerCase());
+        link = 'https://$link';
       }
       if (valid && (tldEmail?.isNotEmpty ?? false)) {
         // we have to validate if the tld exists
-        valid = ALL_TLDS.contains(tldEmail!.toLowerCase());
-        link = 'mailto:' + link;
+        valid = kAllTlds.contains(tldEmail!.toLowerCase());
+        link = 'mailto:$link';
       }
-      if (valid) {
+      final uri = Uri.tryParse(link);
+      if (valid && uri != null) {
         if (kIsWeb) {
           // on web recognizer in TextSpan does not work properly, so we use normal text w/ inkwell
           textSpans.add(
             WidgetSpan(
               child: InkWell(
-                onTap: () => _launchUrl(link),
+                onTap: () => launchUrlIfHandler(uri),
                 child: Text(linkText, style: linkStyle),
               ),
             ),
@@ -323,8 +325,8 @@ TextSpan LinkTextSpans(
             LinkTextSpan(
               text: linkText,
               style: linkStyle,
-              url: link,
-              onLinkTap: _launchUrl,
+              url: uri,
+              onLinkTap: launchUrlIfHandler,
             ),
           );
         }
@@ -334,7 +336,7 @@ TextSpan LinkTextSpans(
 
       i++;
     }
-  });
+  }
   return TextSpan(text: '', children: textSpans);
 }
 

@@ -4,9 +4,11 @@
 import 'package:flutter/material.dart';
 import 'package:matrix_link_text/link_text.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -14,22 +16,23 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'LinkText Demo'),
+      home: const MyHomePage(title: 'LinkText Demo'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
   final String title;
 
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
+
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final String _text = 'Lorem ipsum https://flutter.dev\nhttps://pub.dev dolor https://google.com sit amet';
+  final String _text =
+      'Lorem ipsum https://flutter.dev\nhttps://pub.dev dolor https://google.com sit amet';
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Text(
           'Normal Text Widget',
           textAlign: TextAlign.center,
-          style: TextStyle().copyWith(fontWeight: FontWeight.bold),
+          style: const TextStyle().copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12.0),
         Text(_text, textAlign: TextAlign.center),
@@ -77,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Text(
           'LinkText Widget',
           textAlign: TextAlign.center,
-          style: TextStyle().copyWith(fontWeight: FontWeight.bold),
+          style: const TextStyle().copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12.0),
         LinkText(text: _text, textAlign: TextAlign.center),

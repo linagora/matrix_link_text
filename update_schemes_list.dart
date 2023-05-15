@@ -3,14 +3,14 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-const ICAAN_URL =
+const kIcaanUrl =
     'https://www.iana.org/assignments/uri-schemes/uri-schemes-1.csv';
-const OUT_FILE = './lib/schemes.dart';
+const kOutFile = './lib/schemes.dart';
 
 void main() async {
-  final res = utf8.decode((await http.get(Uri.parse(ICAAN_URL))).bodyBytes);
-  final file = await File(OUT_FILE).open(mode: FileMode.write);
-  await file.writeString('const ALL_SCHEMES = {\n');
+  final res = utf8.decode((await http.get(Uri.parse(kIcaanUrl))).bodyBytes);
+  final file = await File(kOutFile).open(mode: FileMode.write);
+  await file.writeString('const kAllSchemes = {\n');
   for (final row in res.split('\n')) {
     final scheme = row.split(',').first.trim().toLowerCase();
     if (!RegExp(r'^[0-9a-z]+$').hasMatch(scheme) || scheme.isEmpty) {

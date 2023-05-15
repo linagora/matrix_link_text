@@ -1,3 +1,7 @@
+## [2.0.0]
+- Update to Flutter 3.10
+- Breaking-Change: Require urls as `Uri` rather than `String`
+
 ## [1.0.2]
 - Add `CleanRichText.maxLines` and `LinkText.maxLines`
 
