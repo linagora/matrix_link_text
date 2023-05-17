@@ -38,6 +38,6 @@ Add to pubspec.yaml:
 
 ```yaml
 dependencies:
-  matrix_link_text: ^1.0.0
+  matrix_link_text: ^2.0.0
 ```
 For more info, check out [example project](https://github.com/Sorunome/matrix_link_text/tree/master/example).
