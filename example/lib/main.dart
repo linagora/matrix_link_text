@@ -32,7 +32,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final String _text =
-      'Lorem ipsum https://flutter.dev\nhttps://pub.dev dolor https://google.com sit amet';
+      'Lorem ipsum https://flutter.dev\nhttps://pub.dev dolor https://google.com sit amet. At 8:00 AM';
 
   @override
   Widget build(BuildContext context) {
