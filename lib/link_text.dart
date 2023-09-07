@@ -15,6 +15,11 @@ import 'schemes.dart';
 import 'tlds.dart';
 
 typedef LinkTapHandler = void Function(Uri);
+typedef TextSpanBuilder = TextSpan Function(
+  String? text,
+  TextStyle? textStyle,
+  GestureRecognizer? recognizer,
+);
 
 class LinkTextSpan extends TextSpan {
   // Beware!
@@ -149,7 +154,13 @@ TextSpan LinkTextSpans(
     TextStyle? textStyle,
     TextStyle? linkStyle,
     LinkTapHandler? onLinkTap,
-    ThemeData? themeData}) {
+    ThemeData? themeData,
+    TextSpanBuilder? textSpanBuilder}) {
+  textSpanBuilder ??= (text, style, recognizer) => TextSpan(
+        text: text,
+        style: style,
+        recognizer: recognizer,
+      );
   Future<void> launchUrlIfHandler(Uri url) async {
     if (onLinkTap != null) {
       onLinkTap(url);
@@ -172,11 +183,7 @@ TextSpan LinkTextSpans(
   // first estimate if we are going to have matches at all
   final estimateMatches = _estimateRegex.allMatches(text);
   if (estimateMatches.isEmpty) {
-    return TextSpan(
-      text: text,
-      style: textStyle,
-      children: const [],
-    );
+    return textSpanBuilder(text, textStyle, null);
   }
 
   // Our _regex uses lookbehinds for nicer matching, which isn't supported by all browsers yet.
@@ -239,6 +246,7 @@ TextSpan LinkTextSpans(
       // and save the lastEnd for later
       lastEnd = curEnd;
     }
+
     for (final e in estimateMatches) {
       const int kChunkSize = 120;
       final start = max(e.start - kChunkSize, 0);
@@ -272,11 +280,7 @@ TextSpan LinkTextSpans(
   }
   links ??= regexToUse.allMatches(text).toList();
   if (links!.isEmpty) {
-    return TextSpan(
-      text: text,
-      style: textStyle,
-      children: const [],
-    );
+    return textSpanBuilder(text, textStyle, null);
   }
 
   textParts ??= text.split(regexToUse);
@@ -284,7 +288,7 @@ TextSpan LinkTextSpans(
 
   int i = 0;
   for (var part in textParts!) {
-    textSpans.add(TextSpan(text: part, style: textStyle));
+    textSpans.add(textSpanBuilder(part, textStyle, null));
 
     if (i < links!.length) {
       final element = links![i];
@@ -316,22 +320,21 @@ TextSpan LinkTextSpans(
             WidgetSpan(
               child: InkWell(
                 onTap: () => launchUrlIfHandler(uri),
-                child: Text(linkText, style: linkStyle),
+                child: Text.rich(textSpanBuilder(linkText, linkStyle, null)),
               ),
             ),
           );
         } else {
           textSpans.add(
-            LinkTextSpan(
-              text: linkText,
-              style: linkStyle,
-              url: uri,
-              onLinkTap: launchUrlIfHandler,
+            textSpanBuilder(
+              linkText,
+              linkStyle,
+              TapGestureRecognizer()..onTap = () => launchUrlIfHandler(uri),
             ),
           );
         }
       } else {
-        textSpans.add(TextSpan(text: linkText, style: textStyle));
+        textSpans.add(textSpanBuilder(linkText, textStyle, null));
       }
 
       i++;
