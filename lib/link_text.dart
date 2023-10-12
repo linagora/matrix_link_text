@@ -6,7 +6,6 @@ library matrix_link_text;
 
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -310,26 +309,14 @@ TextSpan LinkTextSpans(
       }
       final uri = Uri.tryParse(link);
       if (valid && uri != null) {
-        if (kIsWeb) {
-          // on web recognizer in TextSpan does not work properly, so we use normal text w/ inkwell
-          textSpans.add(
-            WidgetSpan(
-              child: InkWell(
-                onTap: () => launchUrlIfHandler(uri),
-                child: Text(linkText, style: linkStyle),
-              ),
-            ),
-          );
-        } else {
-          textSpans.add(
-            LinkTextSpan(
-              text: linkText,
-              style: linkStyle,
-              url: uri,
-              onLinkTap: launchUrlIfHandler,
-            ),
-          );
-        }
+        textSpans.add(
+          LinkTextSpan(
+            text: linkText,
+            style: linkStyle,
+            url: uri,
+            onLinkTap: launchUrlIfHandler,
+          ),
+        );
       } else {
         textSpans.add(TextSpan(text: linkText, style: textStyle));
       }
