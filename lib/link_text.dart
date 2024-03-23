@@ -301,13 +301,17 @@ TextSpan LinkTextSpans(
 
   int i = 0;
   for (var part in textParts!) {
+    print('part: $part');
     if (mapTagNameToUrl != null) {
+      print('mapTagNameToUrl: $mapTagNameToUrl');
       final foundTagName = mapTagNameToUrl[part.trim()];
       if (foundTagName != null) {
+        print('foundTagName: $foundTagName');
         final pill = foundTagName.toPillModel();
         var leadingWhitespace = part.startsWith(RegExp(r'\s')) ? ' ' : '';
         var trailingWhitespace = RegExp(r'\s$').hasMatch(part) ? ' ' : '';
         if (pill != null) {
+          print('pill: identifier: ${pill.identifier}, url: ${pill.url}');
           textSpans.add(tagNameSpanBuilder(
             leadingWhitespace + pill.identifier + trailingWhitespace,
             tagNameStyle,
