@@ -8,6 +8,8 @@ import 'dart:math';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:matrix_link_text/model/pill.dart';
+import 'package:matrix_link_text/utils/string_extension.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'schemes.dart';
@@ -150,12 +152,21 @@ final RegExp _estimateRegex = RegExp(r'[^\s\u200b][\.:][^\s\u200b]');
 // ignore: non_constant_identifier_names
 TextSpan LinkTextSpans(
     {required String text,
+    Map<String, String>? mapTagNameToUrl,
     TextStyle? textStyle,
     TextStyle? linkStyle,
+    TextStyle? tagNameStyle,
     LinkTapHandler? onLinkTap,
+    void Function(String)? onTagNameTap,
     ThemeData? themeData,
-    TextSpanBuilder? textSpanBuilder}) {
+    TextSpanBuilder? textSpanBuilder,
+    TextSpanBuilder? tagNameSpanBuilder}) {
   textSpanBuilder ??= (text, style, recognizer) => TextSpan(
+        text: text,
+        style: style,
+        recognizer: recognizer,
+      );
+  tagNameSpanBuilder ??= (text, style, recognizer) => TextSpan(
         text: text,
         style: style,
         recognizer: recognizer,
@@ -177,6 +188,9 @@ TextSpan LinkTextSpans(
   linkStyle ??= themeData?.textTheme.bodyMedium?.copyWith(
     color: themeData.colorScheme.secondary,
     decoration: TextDecoration.underline,
+  );
+  tagNameStyle ??= themeData?.textTheme.bodyMedium?.copyWith(
+    color: themeData.colorScheme.secondary,
   );
 
   // first estimate if we are going to have matches at all
@@ -287,7 +301,21 @@ TextSpan LinkTextSpans(
 
   int i = 0;
   for (var part in textParts!) {
-    textSpans.add(textSpanBuilder(part, textStyle, null));
+    if (mapTagNameToUrl != null) {
+      final foundTagName = mapTagNameToUrl[part.trim()];
+      if (foundTagName != null) {
+        final pill = foundTagName.toPillModel();
+        if (pill != null) {
+          textSpans.add(tagNameSpanBuilder(
+            pill.identifier,
+            tagNameStyle,
+            TapGestureRecognizer()..onTap = () => onTagNameTap?.call(pill.url),
+          ));
+        }
+      }
+    } else {
+      textSpans.add(textSpanBuilder(part, textStyle, null));
+    }
 
     if (i < links!.length) {
       final element = links![i];
@@ -313,13 +341,13 @@ TextSpan LinkTextSpans(
       }
       final uri = Uri.tryParse(link);
       if (valid && uri != null) {
-          textSpans.add(
-            textSpanBuilder(
-              linkText,
-              linkStyle,
-              TapGestureRecognizer()..onTap = () => launchUrlIfHandler(uri),
-            ),
-          );
+        textSpans.add(
+          textSpanBuilder(
+            linkText,
+            linkStyle,
+            TapGestureRecognizer()..onTap = () => launchUrlIfHandler(uri),
+          ),
+        );
       } else {
         textSpans.add(textSpanBuilder(linkText, textStyle, null));
       }
@@ -327,6 +355,7 @@ TextSpan LinkTextSpans(
       i++;
     }
   }
+  print('textSpans: $textSpans');
   return TextSpan(text: '', children: textSpans);
 }
 
