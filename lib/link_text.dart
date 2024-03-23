@@ -305,9 +305,11 @@ TextSpan LinkTextSpans(
       final foundTagName = mapTagNameToUrl[part.trim()];
       if (foundTagName != null) {
         final pill = foundTagName.toPillModel();
+        var leadingWhitespace = part.startsWith(RegExp(r'\s')) ? ' ' : '';
+        var trailingWhitespace = RegExp(r'\s$').hasMatch(part) ? ' ' : '';
         if (pill != null) {
           textSpans.add(tagNameSpanBuilder(
-            pill.identifier,
+            leadingWhitespace + pill.identifier + trailingWhitespace,
             tagNameStyle,
             TapGestureRecognizer()..onTap = () => onTagNameTap?.call(pill.url),
           ));
