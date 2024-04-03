@@ -90,8 +90,15 @@ class CleanRichText extends StatefulWidget {
   final InlineSpan child;
   final TextAlign? textAlign;
   final int? maxLines;
+  final TextScaler? textScaler;
 
-  const CleanRichText(this.child, {Key? key, this.textAlign, this.maxLines})
+  const CleanRichText(
+    this.child, {
+    Key? key,
+    this.textAlign,
+    this.maxLines,
+    this.textScaler,
+  })
       : super(key: key);
 
   @override
@@ -122,6 +129,7 @@ class _CleanRichTextState extends State<CleanRichText> {
   Widget build(BuildContext build) {
     return Text.rich(
       widget.child,
+      textScaler: widget.textScaler,
       textAlign: widget.textAlign,
       maxLines: widget.maxLines,
     );
